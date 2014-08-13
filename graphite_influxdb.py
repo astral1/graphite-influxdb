@@ -291,7 +291,7 @@ class InfluxdbFinder(object):
         # query.pattern is basically regex, though * should become [^\.]*
         # and . \.
         # but list series doesn't support pattern matching/regex yet
-        regex = '^{0}$'.format(
+        regex = '^({0})(\.|$)'.format(
             query.pattern.replace('.', '\.').replace('*', '[^\.]*')
         )
         logger.debug("searching for nodes", pattern=query.pattern, regex=regex)
@@ -315,7 +315,9 @@ class InfluxdbFinder(object):
                     if rule_patt.match(name):
                         res = rule_res
                         break
-                leaves.append([name, res])
+                match_result = regex.match(name)
+                if name is match_result.group(1):
+		    leaves.append([name, res])
         with statsd.timer('service=graphite-api.action=cache_set_leaves.target_type=gauge.unit=ms'):
             self.cache.add(key_leaves, leaves, timeout=300)
         return leaves
@@ -338,7 +340,7 @@ class InfluxdbFinder(object):
                         seen_branches.add(name)
                         if regex.match(name) is not None:
                             logger.debug("found branch", name=name)
-                            branches.append(name)
+                            branches.append(regex.match(name).group(1))
         with statsd.timer('service=graphite-api.action=cache_set_branches.target_type=gauge.unit=ms'):
             self.cache.add(key_branches, branches, timeout=300)
         return branches
