@@ -275,11 +275,10 @@ class InfluxdbFinder(object):
         with statsd.timer('service=graphite-api.action=cache_get_nodes.target_type=gauge.unit=ms'):
             nodes = self.cache.get("influxdb_list_series")
             if nodes is None:
-                client, _ = config_to_client()
-                series = client.query('list series')
+                series = self.client.query('list series')
                 series_list = [p['name'] for p in series]
                 nodes = series_list
-                cache.set('influxdb_series', series_list, 60 * 20)
+                self.cache.set('influxdb_series', series_list, 60 * 20)
                 #raise Exception("series not in cache. please run maintain_cache.py")
 
         # and then build the sublist of all matching ones
